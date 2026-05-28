@@ -7,8 +7,10 @@ import streamlit as st
 
 from config import PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE
 from chat_client import stream_chat
+from styles import apply_design, render_hero
 
 st.set_page_config(page_title="피싱 분석 챗봇", page_icon="🛡️")
+apply_design()
 
 
 def get_secret_key() -> str:
@@ -58,7 +60,7 @@ with st.sidebar:
 effective_key = st.session_state.api_key.strip() or SECRET_KEY
 
 # --- 메인 헤더 ---------------------------------------------------------------
-st.title("🛡️ 피싱 분석 챗봇")
+render_hero("피싱 분석 챗봇", "의심스러운 이메일·문자·URL을 분석해 드립니다", icon="🛡️")
 
 # --- 사용 가능 여부 판단(게이트) ----------------------------------------------
 provider_enabled = PROVIDERS[provider]["enabled"]

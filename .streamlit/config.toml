@@ -1,0 +1,7 @@
+# Streamlit 기본 테마 토큰 (참고 사이트 디자인 시스템 기반)
+[theme]
+primaryColor = "#6366f1"            # 인디고 액센트
+backgroundColor = "#ffffff"          # 메인 배경
+secondaryBackgroundColor = "#f8fafc" # 사이드바·카드 배경 (슬레이트-50)
+textColor = "#0f172a"                # 다크 텍스트 (슬레이트-900)
+font = "sans serif"
