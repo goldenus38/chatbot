@@ -39,9 +39,11 @@ streamlit run app.py
 | 파일 | 설명 |
 |---|---|
 | `app.py` | 메인 앱 — 사이드바 설정 + 채팅 UI |
-| `config.py` | 제공사·모델 목록, 피싱 분석 시스템 프롬프트 |
+| `config.py` | 제공사·모델 목록, 피싱 분석 시스템 프롬프트, 샘플·상세도·제한 설정 |
 | `chat_client.py` | OpenAI 호출 래퍼 (스트리밍) |
+| `styles.py` | 커스텀 디자인(테마 CSS·히어로 헤더) |
 | `requirements.txt` | 의존성 |
+| `EVALUATION.md` | 앱 평가 보고서 |
 
 ## 보안 참고
 
