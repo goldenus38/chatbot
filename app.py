@@ -85,11 +85,13 @@ ready = provider_enabled and has_key
 # --- 시작 도우미: 샘플 예시 (대화가 비어있을 때만 노출) ----------------------
 if ready and not st.session_state.messages:
     st.markdown("##### 👇 예시를 눌러 바로 체험해 보세요")
-    cols = st.columns(len(PHISHING_SAMPLES))
-    for col, sample in zip(cols, PHISHING_SAMPLES):
-        if col.button(sample["label"], use_container_width=True):
-            st.session_state.pending_sample = sample["text"]
-            st.rerun()
+    per_row = 3
+    for i in range(0, len(PHISHING_SAMPLES), per_row):
+        cols = st.columns(per_row)
+        for col, sample in zip(cols, PHISHING_SAMPLES[i:i + per_row]):
+            if col.button(sample["label"], use_container_width=True):
+                st.session_state.pending_sample = sample["text"]
+                st.rerun()
 
 # --- 기존 대화 렌더링 ---------------------------------------------------------
 for msg in st.session_state.messages:
