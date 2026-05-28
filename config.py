@@ -23,17 +23,24 @@ DETAIL_LEVELS = {
     },
 }
 
-# 제공사별 사용 가능 여부와 모델 목록.
-# Claude는 과제 요구사항(제공사 선택)을 보여주기 위해 노출하되,
-# 이번 실습에서는 OpenAI 키만 등록하므로 enabled=False 로 비활성화한다.
+# 제공사별 설정: 모델 목록 + API 키 정보(제공사마다 키가 다름).
+#   secret    : Streamlit Secrets / 환경에서 읽을 키 이름
+#   key_label : 사이드바 입력 라벨
+#   key_prefix: 입력창 placeholder(키 형식 힌트)
 PROVIDERS = {
     "ChatGPT": {
         "enabled": True,
         "models": ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+        "secret": "OPENAI_API_KEY",
+        "key_label": "OpenAI API 키",
+        "key_prefix": "sk-...",
     },
     "Claude": {
-        "enabled": False,
+        "enabled": True,
         "models": ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5"],
+        "secret": "ANTHROPIC_API_KEY",
+        "key_label": "Anthropic API 키",
+        "key_prefix": "sk-ant-...",
     },
 }
 

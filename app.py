@@ -10,46 +10,46 @@ from config import (
     DETAIL_LEVELS, MAX_INPUT_CHARS,
 )
 from chat_client import stream_chat
+from claude_client import stream_claude
 from styles import apply_design, render_hero
 
 st.set_page_config(page_title="피싱 분석 챗봇", page_icon="🛡️")
 apply_design()
 
 
-def get_secret_key() -> str:
+def get_secret_key(name: str) -> str:
     """Streamlit Secrets에 저장된 기본 API 키를 읽는다(배포 환경용).
 
     로컬에서 secrets가 없으면 빈 문자열을 반환한다.
     """
     try:
-        return st.secrets.get("OPENAI_API_KEY", "")
+        return st.secrets.get(name, "")
     except Exception:
         return ""
 
 
-SECRET_KEY = get_secret_key()
-
 # --- 세션 상태 초기화 ---------------------------------------------------------
 if "messages" not in st.session_state:
-    st.session_state.messages = []  # [{"role": ..., "content": ...}]
-if "api_key" not in st.session_state:
-    st.session_state.api_key = ""
+    st.session_state.messages = []  # [{"role": "user"|"assistant", "content": ...}]
 
 # --- 사이드바: 설정 -----------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ 설정")
 
     provider = st.selectbox("제공사", list(PROVIDERS.keys()))
-    model = st.selectbox("모델", PROVIDERS[provider]["models"])
+    cfg = PROVIDERS[provider]
+    model = st.selectbox("모델", cfg["models"])
     detail = st.selectbox("응답 상세도", list(DETAIL_LEVELS.keys()), index=1)  # 기본값 "표준"
 
-    st.session_state.api_key = st.text_input(
-        "OpenAI API 키",
+    # 제공사마다 키가 다르므로 위젯 key를 제공사별로 분리(전환 시 각자 값 유지).
+    secret_key = get_secret_key(cfg["secret"])
+    entered = st.text_input(
+        cfg["key_label"],
         type="password",
-        value=st.session_state.api_key,
-        placeholder="sk-... (비워두면 서버 기본 키 사용)" if SECRET_KEY else "sk-...",
+        key=f"apikey_{provider}",
+        placeholder=f"{cfg['key_prefix']} (비워두면 서버 기본 키 사용)" if secret_key else cfg["key_prefix"],
     )
-    if SECRET_KEY:
+    if secret_key:
         st.caption("🔑 서버에 기본 키가 설정되어 있어 바로 사용할 수 있습니다. "
                    "직접 입력하면 입력한 키를 우선 사용합니다.")
     else:
@@ -61,26 +61,19 @@ with st.sidebar:
         st.rerun()
 
 # 사이드바 입력이 있으면 그것을, 없으면 서버 기본 키(Secrets)를 사용한다.
-effective_key = st.session_state.api_key.strip() or SECRET_KEY
+effective_key = (entered or "").strip() or secret_key
 
 # --- 메인 헤더 ---------------------------------------------------------------
 render_hero("피싱 분석 챗봇", "의심스러운 이메일·문자·URL을 분석해 드립니다", icon="🛡️")
 
 # --- 사용 가능 여부 판단(게이트) ----------------------------------------------
-provider_enabled = PROVIDERS[provider]["enabled"]
 has_key = bool(effective_key)
-
-if not provider_enabled:
-    st.warning(
-        f"**{provider}** 는 아직 API 키가 설정되지 않았습니다. "
-        "사이드바에서 제공사를 **ChatGPT** 로 선택해 주세요."
-    )
-elif not has_key:
-    st.info("👈 사이드바 설정에서 **OpenAI API 키**를 먼저 등록해 주세요.")
+if not has_key:
+    st.info(f"👈 사이드바 설정에서 **{cfg['key_label']}**를 먼저 등록해 주세요.")
 else:
     st.caption(WELCOME_MESSAGE)
 
-ready = provider_enabled and has_key
+ready = has_key
 
 # --- 시작 도우미: 샘플 예시 (대화가 비어있을 때만 노출) ----------------------
 if ready and not st.session_state.messages:
@@ -126,14 +119,18 @@ if prompt:
         level = DETAIL_LEVELS[detail]
         system_prompt = f"{PHISHING_SYSTEM_PROMPT}\n\n[응답 상세도] {level['instruction']}"
 
-        # 모델에 보낼 메시지: 시스템 프롬프트 + 대화 기록
-        api_messages = [{"role": "system", "content": system_prompt}]
-        api_messages += st.session_state.messages
-
-        # 어시스턴트 응답 스트리밍 (상세도별 토큰 상한으로 비용 제어)
+        # 제공사에 따라 호출 방식이 다르다(Claude는 system을 별도 인자로 전달).
         with st.chat_message("assistant"):
-            response = st.write_stream(
-                stream_chat(effective_key, model, api_messages, max_tokens=level["max_tokens"])
-            )
+            if provider == "Claude":
+                response = st.write_stream(
+                    stream_claude(effective_key, model, system_prompt,
+                                  st.session_state.messages, max_tokens=level["max_tokens"])
+                )
+            else:
+                api_messages = [{"role": "system", "content": system_prompt}]
+                api_messages += st.session_state.messages
+                response = st.write_stream(
+                    stream_chat(effective_key, model, api_messages, max_tokens=level["max_tokens"])
+                )
 
         st.session_state.messages.append({"role": "assistant", "content": response})
