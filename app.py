@@ -5,7 +5,7 @@
 
 import streamlit as st
 
-from config import PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE
+from config import PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE, PHISHING_SAMPLES
 from chat_client import stream_chat
 from styles import apply_design, render_hero
 
@@ -78,6 +78,15 @@ else:
 
 ready = provider_enabled and has_key
 
+# --- 시작 도우미: 샘플 예시 (대화가 비어있을 때만 노출) ----------------------
+if ready and not st.session_state.messages:
+    st.markdown("##### 👇 예시를 눌러 바로 체험해 보세요")
+    cols = st.columns(len(PHISHING_SAMPLES))
+    for col, sample in zip(cols, PHISHING_SAMPLES):
+        if col.button(sample["label"], use_container_width=True):
+            st.session_state.pending_sample = sample["text"]
+            st.rerun()
+
 # --- 기존 대화 렌더링 ---------------------------------------------------------
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -88,6 +97,10 @@ prompt = st.chat_input(
     "의심스러운 이메일·문자·URL을 붙여넣으세요" if ready else "먼저 API 키를 등록하세요",
     disabled=not ready,
 )
+
+# 샘플 버튼으로 선택한 내용이 있으면 직접 입력한 것처럼 처리한다.
+if st.session_state.get("pending_sample"):
+    prompt = st.session_state.pop("pending_sample")
 
 if prompt:
     # 사용자 메시지 표시 및 저장
