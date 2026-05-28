@@ -3,6 +3,12 @@
 의심스러운 **이메일 · 문자 · URL**을 붙여넣으면 피싱 위험 신호를 분석해 주는 챗봇입니다.
 바이브코딩 교육 과정 실습 과제로, **Streamlit + OpenAI(ChatGPT)** 로 구현했습니다.
 
+## 🌐 배포 (Live Demo)
+
+👉 **https://chatbot-xodua96btqu3kzczrx9hpg.streamlit.app/**
+
+> 💤 **잠자기 안내**: 이 앱은 Streamlit Community Cloud에 배포되어 있으며, **12시간 동안 접속이 없으면 자동으로 잠자기 모드**로 전환됩니다. 잠든 상태에서 접속하면 안내 페이지가 뜨는데, **"Yes, get this app back up!"** 버튼을 누르면 약 1분 후 다시 깨어납니다. (영구적으로 내려가는 것은 아니며, 누구나 깨울 수 있습니다.)
+
 ## 주요 기능
 
 - 챗봇 사용 전 **제공사(ChatGPT / Claude)** 와 **모델** 선택
