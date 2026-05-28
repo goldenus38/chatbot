@@ -1,15 +1,18 @@
 """OpenAI(ChatGPT) 호출 래퍼. 응답을 스트리밍으로 흘려준다."""
 
+from __future__ import annotations  # int | None 등 타입 힌트를 지연 평가 (Python 3.9 호환)
+
 from openai import OpenAI, AuthenticationError, APIConnectionError
 
 
-def stream_chat(api_key: str, model: str, messages: list[dict]):
+def stream_chat(api_key: str, model: str, messages: list[dict], max_tokens: int | None = None):
     """ChatGPT 응답을 토큰 단위로 yield 하는 제너레이터.
 
     Args:
         api_key: OpenAI API 키
         model:   사용할 모델명 (예: "gpt-4o-mini")
         messages: [{"role": "system"|"user"|"assistant", "content": str}, ...]
+        max_tokens: 응답 토큰 상한 (비용 제어). None이면 모델 기본값.
 
     Yields:
         응답 텍스트 조각(str). 오류 발생 시 사용자 친화 메시지를 한 번 yield 한다.
@@ -20,6 +23,7 @@ def stream_chat(api_key: str, model: str, messages: list[dict]):
             model=model,
             messages=messages,
             stream=True,
+            max_tokens=max_tokens,
         )
         for chunk in stream:
             delta = chunk.choices[0].delta.content

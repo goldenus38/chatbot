@@ -5,7 +5,10 @@
 
 import streamlit as st
 
-from config import PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE, PHISHING_SAMPLES
+from config import (
+    PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE, PHISHING_SAMPLES,
+    MAX_OUTPUT_TOKENS, MAX_INPUT_CHARS,
+)
 from chat_client import stream_chat
 from styles import apply_design, render_hero
 
@@ -96,6 +99,7 @@ for msg in st.session_state.messages:
 prompt = st.chat_input(
     "의심스러운 이메일·문자·URL을 붙여넣으세요" if ready else "먼저 API 키를 등록하세요",
     disabled=not ready,
+    max_chars=MAX_INPUT_CHARS,  # 위젯 레벨 입력 길이 제한
 )
 
 # 샘플 버튼으로 선택한 내용이 있으면 직접 입력한 것처럼 처리한다.
@@ -103,19 +107,26 @@ if st.session_state.get("pending_sample"):
     prompt = st.session_state.pop("pending_sample")
 
 if prompt:
-    # 사용자 메시지 표시 및 저장
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # 모델에 보낼 메시지: 시스템 프롬프트 + 대화 기록
-    api_messages = [{"role": "system", "content": PHISHING_SYSTEM_PROMPT}]
-    api_messages += st.session_state.messages
-
-    # 어시스턴트 응답 스트리밍
-    with st.chat_message("assistant"):
-        response = st.write_stream(
-            stream_chat(effective_key, model, api_messages)
+    # 처리 전 입력 길이 검증 (비용·토큰 초과 방지)
+    if len(prompt) > MAX_INPUT_CHARS:
+        st.warning(
+            f"⚠️ 입력이 너무 깁니다 ({len(prompt):,}자). "
+            f"{MAX_INPUT_CHARS:,}자 이내로 줄여 주세요."
         )
+    else:
+        # 사용자 메시지 표시 및 저장
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        # 모델에 보낼 메시지: 시스템 프롬프트 + 대화 기록
+        api_messages = [{"role": "system", "content": PHISHING_SYSTEM_PROMPT}]
+        api_messages += st.session_state.messages
+
+        # 어시스턴트 응답 스트리밍 (응답 토큰 상한으로 비용 제어)
+        with st.chat_message("assistant"):
+            response = st.write_stream(
+                stream_chat(effective_key, model, api_messages, max_tokens=MAX_OUTPUT_TOKENS)
+            )
+
+        st.session_state.messages.append({"role": "assistant", "content": response})
