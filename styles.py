@@ -23,6 +23,14 @@ html, body, [class*="st-"], .stApp {{
     color: {TEXT};
 }}
 
+/* 머티리얼 아이콘은 폰트 오버라이드에서 제외(아이콘이 글자로 깨지는 것 방지) */
+[data-testid="stIconMaterial"],
+span[class*="material-symbols"],
+.material-icons, .material-icons-outlined, .material-icons-round {{
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined',
+                 'Material Icons' !important;
+}}
+
 /* ── 그라데이션 히어로 헤더 ─────────────────────────────── */
 .hero {{
     display: flex;
