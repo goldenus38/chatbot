@@ -7,7 +7,7 @@ import streamlit as st
 
 from config import (
     PROVIDERS, PHISHING_SYSTEM_PROMPT, WELCOME_MESSAGE, PHISHING_SAMPLES,
-    MAX_OUTPUT_TOKENS, MAX_INPUT_CHARS,
+    DETAIL_LEVELS, MAX_INPUT_CHARS,
 )
 from chat_client import stream_chat
 from styles import apply_design, render_hero
@@ -41,6 +41,7 @@ with st.sidebar:
 
     provider = st.selectbox("제공사", list(PROVIDERS.keys()))
     model = st.selectbox("모델", PROVIDERS[provider]["models"])
+    detail = st.selectbox("응답 상세도", list(DETAIL_LEVELS.keys()), index=1)  # 기본값 "표준"
 
     st.session_state.api_key = st.text_input(
         "OpenAI API 키",
@@ -119,14 +120,18 @@ if prompt:
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # 선택한 상세도에 따라 시스템 프롬프트와 토큰 상한을 조정한다.
+        level = DETAIL_LEVELS[detail]
+        system_prompt = f"{PHISHING_SYSTEM_PROMPT}\n\n[응답 상세도] {level['instruction']}"
+
         # 모델에 보낼 메시지: 시스템 프롬프트 + 대화 기록
-        api_messages = [{"role": "system", "content": PHISHING_SYSTEM_PROMPT}]
+        api_messages = [{"role": "system", "content": system_prompt}]
         api_messages += st.session_state.messages
 
-        # 어시스턴트 응답 스트리밍 (응답 토큰 상한으로 비용 제어)
+        # 어시스턴트 응답 스트리밍 (상세도별 토큰 상한으로 비용 제어)
         with st.chat_message("assistant"):
             response = st.write_stream(
-                stream_chat(effective_key, model, api_messages, max_tokens=MAX_OUTPUT_TOKENS)
+                stream_chat(effective_key, model, api_messages, max_tokens=level["max_tokens"])
             )
 
         st.session_state.messages.append({"role": "assistant", "content": response})
